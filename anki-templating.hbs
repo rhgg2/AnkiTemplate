@@ -1,0 +1,269 @@
+{{#*inline "glossary-recurse"~}}
+    {{~#scope~}}
+        {{~set "count" count~}}
+        {{~set "fn" fn~}}
+        {{~#if (op "===" definition.type "term")~}}
+            {{~#each definition.glossary~}}
+                {{~#if (op "==" type "structured-content")~}}
+                    {{~> (get "fn")~}}
+                {{~/if~}}
+            {{~/each~}}
+        {{~else if (op "||" (op "===" definition.type "termGrouped") (op "===" definition.type "termMerged"))~}}
+            {{~#each definition.definitions~}}
+                {{~#each glossary~}}
+                    {{~#if (op "==" type "structured-content")~}}
+                        {{~> (get "fn")~}}
+                    {{~/if~}}
+                {{~/each~}}
+            {{~/each~}}
+        {{~/if~}}
+    {{~/scope~}}
+{{~/inline}}
+
+{{#*inline "unwrap-noop"~}}
+{{~/inline}}
+
+{{#*inline "format-definition"}}
+    {{~#if (op "==" length 1)~}}
+        {{~this.[0].content~}}
+    {{~else if (op ">=" length 2)~}}
+        {{~#each .}}{{content}}{{#unless @last}}, {{/unless}}{{/each~}}
+    {{~else~}}
+        {{~content~}}
+    {{~/if~}}
+{{/inline}}
+
+{{#*inline "unwrap-nth-definition"~}}
+    {{~#if (regexMatch "^glossary" "g" data.content)~}}
+        {{~#if (op ">" (get "count") 1)~}}
+            {{~set "count" (op "-" (get "count") 1)~}}
+        {{~else~}}
+            {{~set "count" 0~}}
+            {{~set "fn" "unwrap-noop"~}}
+            {{~>format-definition content~}}
+        {{~/if~}}
+    {{~else if (op ">=" length 1)~}}
+        {{~#each .~}}
+            {{~>(get "fn") .~}}
+        {{/each}}
+    {{~else if content~}}
+        {{~>(get "fn") content~}}
+    {{~/if~}} 
+{{~/inline}}
+
+{{#*inline "definition-1"}}
+    {{~>glossary-recurse count=1 fn="unwrap-nth-definition"}}
+{{/inline}}
+
+{{#*inline "definition-2"}}
+    {{~>glossary-recurse count=2 fn="unwrap-nth-definition"}}
+{{/inline}}
+
+{{#*inline "definition-3"}}
+    {{~>glossary-recurse count=3 fn="unwrap-nth-definition"}}
+{{/inline}}
+
+
+{{#*inline "unwrap-all-definitions"}}
+    {{~#if (regexMatch "^glossary" "g" data.content)~}}
+        <li>{{~>format-definition content~}}</li>
+    {{~else if (op ">=" length 1)~}}
+        {{~#each .}}{{>(get "fn")}}{{/each~}}
+    {{~else if content~}}
+        {{~>(get "fn") content~}}
+    {{~/if~}} 
+{{/inline}}
+
+{{#*inline "all-definitions"~}}
+    <ol class="definitions-list">
+    {{~>glossary-recurse fn="unwrap-all-definitions"~}}
+    </ol>
+{{/inline}}
+
+{{#*inline "unwrap-from-nth-definition"~}}
+    {{~#if (regexMatch "^glossary" "g" data.content)~}}
+        {{~#if (op ">" (get "count") 1)~}}
+            {{~set "count" (op "-" (get "count") 1)~}}
+        {{~else~}}
+            {{~set "count" 0~}}
+            <li>{{>format-definition content~}}</li>
+        {{~/if~}}
+    {{~else if (op ">=" length 1)~}}
+        {{~#each .~}}
+            {{~>(get "fn") .~}}
+        {{/each}}
+    {{~else if content~}}
+        {{~>(get "fn") content~}}
+    {{~/if~}} 
+{{~/inline}}
+
+{{#*inline "all-but-first-definition"~}}
+    <ol class="definitions">
+    {{~>glossary-recurse count=2 fn="unwrap-from-nth-definition"~}}
+    </ol>
+{{/inline}}
+
+{{!~ create html elements from the given structure ~}}
+{{#*inline "py-structured-to-html"}}
+    {{~#if tag~}}
+        <{{tag}}>{{>py-format-html content~}}
+    {{~else~}}
+        {{.}}
+    {{~/if~}}
+    {{~#if tag~}}
+        </{{tag}}>
+    {{~/if~}}
+{{/inline}}
+
+{{!~ unwrap list objects ~}}
+{{#*inline "py-format-html"}}
+    {{~#if (op "&&"(op "==" (typeof .) "object") (op ">" length 1))~}}
+        {{~#each .~}}
+            {{~>py-structured-to-html .}}
+        {{~/each~}}
+    {{~else~}}
+        {{~>py-structured-to-html .}}
+    {{~/if~}}
+{{/inline}}
+
+{{#*inline "unwrap-all-examples-jp"}}
+    {{~#if (regexMatch "example-sentence-a" "g" data.content)~}}
+        <li>{{~>py-format-html content}}</li>
+    {{~else if (op ">=" length 1)~}}
+        {{~#each .}}{{>(get "fn")}}{{/each~}}
+    {{~else if content~}}
+        {{~>(get "fn") content~}}
+    {{~/if~}} 
+{{/inline}}
+
+{{#*inline "all-examples-jp"~}}
+    <ol class="examples-list-jp">
+    {{~>glossary-recurse fn="unwrap-all-examples-jp"~}}
+    </ol>
+{{/inline}}
+
+
+{{#*inline "unwrap-all-examples-en"}}
+    {{~#if (regexMatch "example-sentence-b" "g" data.content)~}}
+        <li>{{content.[0]}}</li>
+    {{~else if (op ">=" length 1)~}}
+        {{~#each .}}{{>(get "fn")}}{{/each~}}
+    {{~else if content~}}
+        {{~>(get "fn") content~}}
+    {{~/if~}} 
+{{/inline}}
+
+{{#*inline "all-examples-en"~}}
+    <ol class="examples-list-jp">
+    {{~>glossary-recurse fn="unwrap-all-examples-jp"~}}
+    </ol>
+{{/inline}}
+
+
+{{#*inline "unwrap-nth-example-jp"}}
+    {{~#if (regexMatch "example-sentence-a" "g" data.content)~}}
+        {{~#if (op ">" (get "count") 1)~}}
+            {{~set "count" (op "-" (get "count") 1)~}}
+        {{~else~}}
+            {{~set "count" 0~}}
+            {{~set "fn" "unwrap-noop"~}}
+            {{~>py-format-html content}}
+        {{~/if~}}
+    {{~else if (op ">=" length 1)~}}
+        {{~#each .}}{{>(get "fn")}}{{/each~}}
+    {{~else if content~}}
+        {{~>(get "fn") content~}}
+    {{~/if~}} 
+{{/inline}}
+
+{{#*inline "example-1-jp"~}}
+    {{~>glossary-recurse count=1 fn="unwrap-nth-example-jp"~}}
+{{/inline}}
+
+{{#*inline "example-2-jp"~}}
+    {{~>glossary-recurse count=2 fn="unwrap-nth-example-jp"~}}
+{{/inline}}
+
+{{#*inline "example-3-jp"~}}
+    {{~>glossary-recurse count=3 fn="unwrap-nth-example-jp"~}}
+{{/inline}}
+
+
+{{#*inline "unwrap-nth-example-en"}}
+    {{~#if (regexMatch "example-sentence-b" "g" data.content)~}}
+        {{~#if (op ">" (get "count") 1)~}}
+            {{~set "count" (op "-" (get "count") 1)~}}
+        {{~else~}}
+            {{~set "count" 0~}}
+            {{~set "fn" "unwrap-noop"~}}
+            {{~>py-format-html content}}
+        {{~/if~}}
+    {{~else if (op ">=" length 1)~}}
+        {{~#each .}}{{>(get "fn")}}{{/each~}}
+    {{~else if content~}}
+        {{~>(get "fn") content~}}
+    {{~/if~}}
+{{/inline}}
+
+{{#*inline "example-1-en"~}}
+    {{~>glossary-recurse count=1 fn="unwrap-nth-example-en"~}}
+{{/inline}}
+
+{{#*inline "example-2-en"~}}
+    {{~>glossary-recurse count=2 fn="unwrap-nth-example-en"~}}
+{{/inline}}
+
+{{#*inline "example-3-en"~}}
+    {{~>glossary-recurse count=3 fn="unwrap-nth-example-en"~}}
+{{/inline}}
+
+{{~#*inline "kanji-meanings"~}}
+    {{~#if (op ">" definition.glossary.length 1)~}}
+        {{~#each definition.glossary}}{{.}}{{#unless @last}}, {{/unless}}{{/each~}}
+    {{~else~}}
+        {{~#each definition.glossary~}}{{.}}{{~/each~}}
+    {{~/if~}}
+{{~/inline~}}
+
+{{#*inline "unwrap-all-tags"}}
+    {{~#if data.code~}}
+        {{~#if (op "==" (get "count") 1)~}}
+            {{~set "count" 0~}}
+        {{~else}} · {{/if~}}
+        {{content}}
+    {{~else if data.[sense-number]~}}
+        {{~set "fn" "unwrap-noop"~}}
+    {{~else if (op ">=" length 1)~}}
+        {{~#each .}}{{>(get "fn")}}{{/each~}}
+    {{~else if content~}}
+        {{~>(get "fn") content~}}
+    {{~/if~}}
+{{/inline}}
+
+
+{{#*inline "tags"~}}
+    {{~>glossary-recurse count=1 fn="unwrap-all-tags"~}}
+{{/inline}}
+
+
+{{#*inline "tags-list"~}}
+    {{~>tags list=true}}
+{{/inline}}
+
+{{#*inline "first-reading"}}
+    {{~#unless modeTermKana~}}
+        {{~definition.reading.[0]~}}
+    {{~/unless~}}
+{{/inline}}
+
+{{#*inline "other-readings"}}
+    {{~#unless modeTermKana~}}
+        {{~#if (op ">" definition.reading.length 1)~}}
+            {{~#each definition.reading~}}
+                {{~#unless @first}}{{.}}
+                    {{~#unless @last}} · {{/unless~}}
+                {{~/unless~}}
+            {{~/each~}}
+        {{~/if~}}
+    {{~/unless~}}
+{{/inline}}
